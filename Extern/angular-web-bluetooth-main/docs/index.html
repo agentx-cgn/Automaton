@@ -1,0 +1,248 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>angular-web-bluetooth-starter documentation</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+	      <link rel="stylesheet" href="./styles/style.css">
+        <link rel="stylesheet" href="./styles/material.css">
+    </head>
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top visible-xs">
+            <a href="./" class="navbar-brand">angular-web-bluetooth-starter documentation</a>
+            <button type="button" class="btn btn-default btn-menu ion-ios-menu" id="btn-menu"></button>
+        </div>
+
+        <div class="xs-menu menu" id="mobile-menu">
+                <div id="book-search-input" role="search"><input type="text" placeholder="Type to search"></div>            <compodoc-menu></compodoc-menu>
+        </div>
+
+        <div class="container-fluid main">
+           <div class="row main">
+               <div class="hidden-xs menu">
+                   <compodoc-menu mode="normal"></compodoc-menu>
+               </div>
+               <!-- START CONTENT -->
+               <div class="content getting-started">
+                   <div class="content-data">
+
+<div align="center">
+  <img src="https://cloud.githubusercontent.com/assets/1699357/21510721/556f650c-cc97-11e6-8a69-ddd67eeeebb8.png" width="250" />
+</div>
+<h2 align="center">The missing Web Bluetooth module for Angular</h2>
+<p align="center"><img src="https://github.com/manekinekko/angular-web-bluetooth/workflows/Node.js%20CI/badge.svg"/></p>
+
+<h2 id="install">Install</h2>
+<div><pre class="line-numbers"><code class="language-none">npm install -S &#64;manekinekko/angular-web-bluetooth &#64;types/web-bluetooth</code></pre></div><blockquote>
+<p>Note: Make also sure the <code>@types/web-bluetooth</code> is installed correctly in your <code>node_modules</code>.</p>
+</blockquote>
+<h2 id="getting-started">Getting started</h2>
+<h2 id="1-import-the-webbluetoothmodule-module">1) import the <code>WebBluetoothModule</code> module</h2>
+<div><pre class="line-numbers"><code class="language-typescript">import { NgModule } from &#39;&#64;angular/core&#39;;
+import { WebBluetoothModule } from &#39;&#64;manekinekko/angular-web-bluetooth&#39;;
+
+&#64;NgModule({
+  imports: [
+    //...,
+    WebBluetoothModule.forRoot({
+      enableTracing: true // or false, this will enable logs in the browser&#39;s console
+    })
+  ]
+  //...
+})
+export class AppModule {}</code></pre></div><h2 id="2a-use-it-in-your-servicecomponent-the-easiest-way">2.a) use it in your service/component (the easiest way)</h2>
+<p>Here is an annotated example using the <code>BluetoothCore</code> service:</p>
+<div><pre class="line-numbers"><code class="language-javascript">import { Injectable } from &#39;&#64;angular/core&#39;;
+import { BluetoothCore } from &#39;&#64;manekinekko/angular-web-bluetooth&#39;;
+import { map } from &#39;rxjs/operators&#39;;
+
+&#64;Injectable({
+  providedIn: &#39;root&#39;
+})
+export class BatteryLevelService {
+
+  constructor(public readonly ble: BluetoothCore) {}
+
+  getDevice() {
+    // call this method to get the connected device
+    return this.ble.getDevice$();
+  }
+
+  stream() {
+    // call this method to get a stream of values emitted by the device for a given characteristic
+    return this.ble.streamValues$().pipe(
+      map((value: DataView) =&gt; value.getInt8(0))
+    );
+  }
+
+  disconnectDevice() {
+    // call this method to disconnect from the device. This method will also stop clear all subscribed notifications
+    this.ble.disconnectDevice();
+  }
+
+  value() {
+    console.log(&#39;Getting Battery level...&#39;);
+
+    return this.ble
+      .value$({
+        service: &#39;battery_service&#39;,
+        characteristic: &#39;battery_level&#39;
+      });
+  }
+
+}</code></pre></div><h2 id="2b-use-it-in-your-servicecomponent-the-advanced-way">2.b) use it in your service/component (the advanced way)</h2>
+<p>Here is an annotated example using the <code>BluetoothCore</code> service:</p>
+<div><pre class="line-numbers"><code class="language-javascript">import { Injectable } from &#39;&#64;angular/core&#39;;
+import { map, mergeMap } from &#39;rxjs/operators&#39;;
+import { BluetoothCore } from &#39;&#64;manekinekko/angular-web-bluetooth&#39;;
+
+&#64;Injectable({
+  providedIn: &#39;root&#39;
+})
+export class BatteryLevelService {
+  static GATT_CHARACTERISTIC_BATTERY_LEVEL = &#39;battery_level&#39;;
+  static GATT_PRIMARY_SERVICE = &#39;battery_service&#39;;
+
+  constructor(public ble: BluetoothCore) {}
+
+  getDevice() {
+    // call this method to get the connected device
+    return this.ble.getDevice$();
+  }
+
+  stream() {
+    // call this method to get a stream of values emitted by the device
+    return this.ble.streamValues$().pipe(map((value: DataView) =&gt; value.getUint8(0)));
+  }
+
+  disconnectDevice() {
+    this.ble.disconnectDevice();
+  }
+
+  /**
+   * Get Battery Level GATT Characteristic value.
+   * This logic is specific to this service, this is why we can&#39;t abstract it elsewhere.
+   * The developer is free to provide any service, and characteristics they want.
+   *
+   * &#64;return Emites the value of the requested service read from the device
+   */
+  value() {
+    console.log(&#39;Getting Battery level...&#39;);
+
+    return this.ble
+
+        // 1) call the discover method will trigger the discovery process (by the browser)
+        .discover$({
+          acceptAllDevices: true,
+          optionalServices: [BatteryLevelService.GATT_PRIMARY_SERVICE]
+        })
+        .pipe(
+
+          // 2) get that service
+          mergeMap((gatt: BluetoothRemoteGATTServer) =&gt; {
+            return this.ble.getPrimaryService$(gatt, BatteryLevelService.GATT_PRIMARY_SERVICE);
+          }),
+
+          // 3) get a specific characteristic on that service
+          mergeMap((primaryService: BluetoothRemoteGATTService) =&gt; {
+            return this.ble.getCharacteristic$(primaryService, BatteryLevelService.GATT_CHARACTERISTIC_BATTERY_LEVEL);
+          }),
+
+          // 4) ask for the value of that characteristic (will return a DataView)
+          mergeMap((characteristic: BluetoothRemoteGATTCharacteristic) =&gt; {
+            return this.ble.readValue$(characteristic);
+          }),
+
+          // 5) on that DataView, get the right value
+          map((value: DataView) =&gt; value.getUint8(0))
+        )
+  }
+}</code></pre></div><h2 id="api-documentation">API documentation</h2>
+<p>The API documentation can be found here:  <a href="https://manekinekko.github.io/angular-web-bluetooth/">https://manekinekko.github.io/angular-web-bluetooth/</a></p>
+<h2 id="need-a-starter">Need a starter?</h2>
+<img src="src/assets/screenshot.png"/>
+
+<p>This project serves also as a starter. Run the following command:</p>
+<div><pre class="line-numbers"><code class="language-bash">npm start</code></pre></div><h2 id="blog-post">Blog post</h2>
+<p>Checkout my full <a href="https://dev.to/angular/the-web-bluetooth-module-for-angular-314b">blog post on dev.to</a> about how to use this package in your app.</p>
+<h2 id="have-a-pr">Have a PR?</h2>
+<p>All contributions are welcome. Here are few <a href="https://github.com/manekinekko/angular-web-bluetooth/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22">open issues</a> that I need help with ;)</p>
+<h1 id="license">License</h1>
+<p>The MIT License (MIT) Copyright (c) 2017 - Wassim CHEGHAM</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the &quot;Software&quot;), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                   
+
+
+
+
+                   </div><div class="search-results">
+    <div class="has-results">
+        <h1 class="search-results-title"><span class='search-results-count'></span> result-matching "<span class='search-query'></span>"</h1>
+        <ul class="search-results-list"></ul>
+    </div>
+    <div class="no-results">
+        <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+    </div>
+</div>
+</div>
+               <!-- END CONTENT -->
+           </div>
+       </div>
+
+       <script>
+            var COMPODOC_CURRENT_PAGE_DEPTH = 0;
+            var COMPODOC_CURRENT_PAGE_CONTEXT = 'getting-started';
+            var COMPODOC_CURRENT_PAGE_URL = 'index.html';
+            var MAX_SEARCH_RESULTS = 15;
+       </script>
+
+       <script src="./js/libs/custom-elements.min.js"></script>
+       <script src="./js/libs/lit-html.js"></script>
+       <!-- Required to polyfill modern browsers as code is ES5 for IE... -->
+       <script src="./js/libs/custom-elements-es5-adapter.js" charset="utf-8" defer></script>
+       <script src="./js/menu-wc.js" defer></script>
+
+       <script src="./js/libs/bootstrap-native.js"></script>
+
+       <script src="./js/libs/es6-shim.min.js"></script>
+       <script src="./js/libs/EventDispatcher.js"></script>
+       <script src="./js/libs/promise.min.js"></script>
+       <script src="./js/libs/zepto.min.js"></script>
+
+       <script src="./js/compodoc.js"></script>
+
+       <script src="./js/tabs.js"></script>
+       <script src="./js/menu.js"></script>
+       <script src="./js/libs/clipboard.min.js"></script>
+       <script src="./js/libs/prism.js"></script>
+       <script src="./js/sourceCode.js"></script>
+          <script src="./js/search/search.js"></script>
+          <script src="./js/search/lunr.min.js"></script>
+          <script src="./js/search/search-lunr.js"></script>
+          <script src="./js/search/search_index.js"></script>
+       <script src="./js/lazy-load-graphs.js"></script>
+
+
+    </body>
+</html>

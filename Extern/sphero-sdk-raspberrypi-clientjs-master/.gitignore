@@ -1,0 +1,9 @@
+# Specific files
+package-lock.json
+*.DS_Store
+
+# Node Modules directory
+node_modules
+
+# JetBrains WebStorm directory
+.idea/*
