@@ -1,0 +1,12 @@
+[submodule "Modules/BoltAPP"]
+	path = Modules/BoltAPP
+	url = https://github.com/Tineyo/BoltAPP
+[submodule "Modules/angular-web-bluetooth"]
+	path = Modules/angular-web-bluetooth
+	url = https://github.com/manekinekko/angular-web-bluetooth
+[submodule "Modules/sphero-sdk-raspberrypi-nodejs"]
+	path = Modules/sphero-sdk-raspberrypi-nodejs
+	url = https://github.com/sphero-inc/sphero-sdk-raspberrypi-nodejs
+[submodule "Modules/sphero-sdk-raspberrypi-clientjs"]
+	path = Modules/sphero-sdk-raspberrypi-clientjs
+	url = https://github.com/sphero-inc/sphero-sdk-raspberrypi-clientjs
