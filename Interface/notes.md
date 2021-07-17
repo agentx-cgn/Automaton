@@ -1,5 +1,8 @@
 
 
+SB-9129 E&:2E:70:12:91:29
+SB-2B96 
+
 
 Anytime your robot is not in use, we recommend putting your robot into deep sleep and keeping it off the charging base.
 

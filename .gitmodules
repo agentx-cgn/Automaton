@@ -10,3 +10,6 @@
 [submodule "Modules/sphero-sdk-raspberrypi-clientjs"]
 	path = Modules/sphero-sdk-raspberrypi-clientjs
 	url = https://github.com/sphero-inc/sphero-sdk-raspberrypi-clientjs
+[submodule "Modules/spherov2.js"]
+	path = Modules/spherov2.js
+	url = https://github.com/igbopie/spherov2.js
